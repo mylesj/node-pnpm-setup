@@ -1,0 +1,39 @@
+name: setup nodejs & pnpm
+
+inputs:
+  node-version:
+    description: specify nodejs version
+    required: true
+
+  pnpm-version:
+    description: specify pnpm version
+    required: true
+
+runs:
+  using: composite
+
+  steps:
+    - uses: actions/setup-node@v3
+      with:
+        node-version: ${{ inputs.node-version }}
+
+    - uses: pnpm/action-setup@v2
+      with:
+        version: ${{ inputs.pnpm-version }}
+        run_install: false
+
+    - name: export pnpm store path
+      shell: bash
+      run: |
+        echo "PNPM_STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+    - uses: actions/cache@v3
+      with:
+        path: ${{ env.PNPM_STORE_PATH }}
+        key: ${{ runner.os }}-pnpm-store-${{ hashFiles('./pnpm-lock.yaml') }}
+        restore-keys: |
+          ${{ runner.os }}-pnpm-store-
+
+    - name: install dependencies
+      shell: bash
+      run: pnpm install
